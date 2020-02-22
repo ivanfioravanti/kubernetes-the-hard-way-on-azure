@@ -1,27 +1,27 @@
-# Generating Kubernetes Configuration Files for Authentication
+# 인증을 위한 쿠버네티스 구성 파일 생성
 
-In this lab you will generate [Kubernetes configuration files](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/), also known as kubeconfigs, which enable Kubernetes clients to locate and authenticate to the Kubernetes API Servers.
+이 실습에서는 kubeconfigs 라고 불리는 [쿠버네티스 구성 파일](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) 을 생성하여 쿠버네티스 클라이언트가 쿠버네티스 API 서버를 찾고 인증 할 수 있도록 합니다.
 
-## Client Authentication Configs
+## 클라이언트 인증 구성
 
-In this section you will generate kubeconfig files for the `controller manager`, `kubelet`, `kube-proxy`, and `scheduler` clients and the `admin` user.
+이 섹션에서는 `controller manager`, `kubelet`, `kube-proxy` 및 `scheduler` 클라이언트와 `admin` 사용자에 대한 kubeconfig 파일을 생성합니다.
 
-### Kubernetes Public IP Address
+### 쿠버네티스 퍼블릭 IP 주소
 
-Each kubeconfig requires a Kubernetes API Server to connect to. To support high availability the IP address assigned to the external load balancer fronting the Kubernetes API Servers will be used.
+각 kubeconfig에는 쿠버네티스 API 서버가 지정되어 있어야합니다. 고 가용성을 지원하기 위해 쿠버네티스 API 서버 앞에 있는 외부로드 밸런서에 할당된 IP 주소가 사용됩니다.
 
-Retrieve the `kubernetes-the-hard-way` static IP address:
+`kubernetes-the-hard-way` 고정 IP 주소를 확인합니다.
 
 ```shell
 KUBERNETES_PUBLIC_ADDRESS=$(az network public-ip show -g kubernetes \
   -n kubernetes-pip --query "ipAddress" -otsv)
 ```
 
-### The kubelet Kubernetes Configuration File
+### kubelet 쿠버네티스 구성 파일
 
-When generating kubeconfig files for Kubelets the client certificate matching the Kubelet's node name must be used. This will ensure Kubelets are properly authorized by the Kubernetes [Node Authorizer](https://kubernetes.io/docs/admin/authorization/node/).
+Kubelets에 대한 kubeconfig 파일을 생성 할 때 Kubelet의 노드 이름과 일치하는 클라이언트 인증서를 사용해야합니다. 이를 통해 Kubelet이 쿠버네티스 [노드 인증자](https://kubernetes.io/docs/admin/authorization/node/)에 의해 올바르게 승인됩니다.
 
-Generate a kubeconfig file for each worker node:
+각 작업자 노드에 대한 kubeconfig 파일을 만듭니다.
 
 ```shell
 for instance in worker-0 worker-1 worker-2; do
@@ -46,7 +46,7 @@ for instance in worker-0 worker-1 worker-2; do
 done
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 worker-0.kubeconfig
@@ -54,9 +54,9 @@ worker-1.kubeconfig
 worker-2.kubeconfig
 ```
 
-### The kube-proxy Kubernetes Configuration File
+### kube-proxy 쿠버네티스 구성 파일
 
-Generate a kubeconfig file for the `kube-proxy` service:
+`kube-proxy` 서비스에 대한 kubeconfig 파일을 만듭니다.
 
 ```shell
 kubectl config set-cluster kubernetes-the-hard-way \
@@ -85,15 +85,15 @@ kubectl config set-context default \
 kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 kube-proxy.kubeconfig
 ```
 
-### The kube-controller-manager Kubernetes Configuration File
+### kube-controller-manager 쿠버네티스 구성 파일
 
-Generate a kubeconfig file for the `kube-controller-manager` service:
+`kube-controller-manager` 서비스를 위한 kubeconfig 파일을 만듭니다.
 
 ```shell
 {
@@ -118,15 +118,15 @@ Generate a kubeconfig file for the `kube-controller-manager` service:
 }
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 kube-controller-manager.kubeconfig
 ```
 
-### The kube-scheduler Kubernetes Configuration File
+### kube-scheduler 쿠버네티스 구성 파일
 
-Generate a kubeconfig file for the `kube-scheduler` service:
+`kube-scheduler` 서비스에 대한 kubeconfig 파일을 만듭니다.
 
 ```shell
 {
@@ -151,15 +151,15 @@ Generate a kubeconfig file for the `kube-scheduler` service:
 }
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 kube-scheduler.kubeconfig
 ```
 
-### The admin Kubernetes Configuration File
+### 관리자 쿠버네티스 구성 파일
 
-Generate a kubeconfig file for the `admin` user:
+`admin` 사용자를 위한 kubeconfig 파일을 만듭니다.
 
 ```shell
 {
@@ -184,15 +184,15 @@ Generate a kubeconfig file for the `admin` user:
 }
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 admin.kubeconfig
 ```
 
-## Distribute the Kubernetes Configuration Files
+## 쿠버네티스 구성 파일 배포
 
-Copy the appropriate `kubelet` and `kube-proxy` kubeconfig files to each worker instance:
+적절한 `kubelet` 및 `kube-proxy` kubeconfig 파일을 각 작업자 인스턴스에 복사합니다.
 
 ```shell
 for instance in worker-0 worker-1 worker-2; do
@@ -203,7 +203,7 @@ for instance in worker-0 worker-1 worker-2; do
 done
 ```
 
-Copy the appropriate `kube-controller-manager` and `kube-scheduler` kubeconfig files to each controller instance:
+적절한 `kube-controller-manager` 및 `kube-scheduler` kubeconfig 파일을 각 컨트롤러 인스턴스에 복사합니다.
 
 ```shell
 for instance in controller-0 controller-1 controller-2; do
@@ -214,4 +214,4 @@ for instance in controller-0 controller-1 controller-2; do
 done
 ```
 
-Next: [Generating the Data Encryption Config and Key](06-data-encryption-keys.md)
+다음: [데이터 암호화 구성 및 키 생성](06-data-encryption-keys.md)

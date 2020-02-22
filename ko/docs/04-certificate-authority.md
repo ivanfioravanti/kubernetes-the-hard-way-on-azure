@@ -1,12 +1,12 @@
-# Provisioning a CA and Generating TLS Certificates
+# CA 프로비저닝 및 TLS 인증서 생성
 
-In this lab you will provision a [PKI Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure) using CloudFlare's PKI toolkit, [cfssl](https://github.com/cloudflare/cfssl), then use it to bootstrap a Certificate Authority, and generate TLS certificates for the following components: etcd, kube-apiserver, kubelet, and kube-proxy.
+이 실습에서는 CloudFlare의 PKI 도구인 [cfssl](https://en.wikipedia.org/wiki/Public_key_infrastructure)을 사용하여 [PKI 인프라](https://github.com/cloudflare/cfssl)를 프로비저닝 한 다음, 이를 사용하여 인증 기관을 부트 스트랩하고 etcd, kube-apiserver, kubelet 및 kube-proxy와 같은 구성 요소에 대한 TLS 인증서를 생성합니다.
 
-## Certificate Authority
+## 인증 주체 (CA)
 
-In this section you will provision a Certificate Authority that can be used to generate additional TLS certificates.
+이 섹션에서는 추가 TLS 인증서를 생성하는 데 사용할 수 있는 인증 주체를 새로 만듭니다.
 
-Create the CA configuration file:
+CA 구성 파일을 만듭니다.
 
 ```shell
 cat > ca-config.json <<EOF
@@ -26,7 +26,7 @@ cat > ca-config.json <<EOF
 EOF
 ```
 
-Create the CA certificate signing request:
+CA 인증서 서명 요청을 만듭니다.
 
 ```shell
 cat > ca-csr.json <<EOF
@@ -49,26 +49,26 @@ cat > ca-csr.json <<EOF
 EOF
 ```
 
-Generate the CA certificate and private key:
+CA 인증서 및 개인 키를 만듭니다.
 
 ```shell
 cfssl gencert -initca ca-csr.json | cfssljson -bare ca
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 ca-key.pem
 ca.pem
 ```
 
-## Client and Server Certificates
+## 클라이언트 및 서버 인증서
 
-In this section you will generate client and server certificates for each Kubernetes component and a client certificate for the Kubernetes `admin` user.
+이 섹션에서는 각 쿠버네티스 구성 요소에 대한 클라이언트 및 서버 인증서와 쿠버네티스 `admin` 사용자에 대한 클라이언트 인증서를 생성합니다.
 
-### The Admin Client Certificate
+### 관리 클라이언트 인증서
 
-Create the `admin` client certificate signing request:
+`admin` 클라이언트 인증서 서명 요청을 작성합니다.
 
 ```shell
 cat > admin-csr.json <<EOF
@@ -91,7 +91,7 @@ cat > admin-csr.json <<EOF
 EOF
 ```
 
-Generate the `admin` client certificate and private key:
+`admin` 클라이언트 인증서 및 개인 키를 생성합니다.
 
 ```shell
 cfssl gencert \
@@ -102,18 +102,18 @@ cfssl gencert \
   admin-csr.json | cfssljson -bare admin
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 admin-key.pem
 admin.pem
 ```
 
-### The Kubelet Client Certificates
+### Kubelet 클라이언트 인증서
 
-Kubernetes uses a [special-purpose authorization mode](https://kubernetes.io/docs/admin/authorization/node/) called Node Authorizer, that specifically authorizes API requests made by [Kubelets](https://kubernetes.io/docs/concepts/overview/components/#kubelet). In order to be authorized by the Node Authorizer, Kubelets must use a credential that identifies them as being in the `system:nodes` group, with a username of `system:node:<nodeName>`. In this section you will create a certificate for each Kubernetes worker node that meets the Node Authorizer requirements.
+쿠버네티스는 노드 인증자라는 [특수 목적의 권한 부여 모드를](https://kubernetes.io/docs/admin/authorization/node/) 사용합니다. 이 [모드](https://kubernetes.io/docs/concepts/overview/components/#kubelet)는 {a2}Kubelets의{/a2} API 요청을 구체적으로 승인합니다. 노드 인증자를 통해 권한을 부여하기 위해 새로 등록하는 Kubelet은 `system:node:<nodeName>` 이라는 사용자 이름이 {code4}system:nodes{/code4} 그룹에 속하는 것으로 식별되는 자격 증명을 사용해야합니다. 이 섹션에서는 노드 권한 부여자 요구 사항을 충족하는 각 쿠버네티스 작업자 노드에 대한 인증서를 만듭니다.
 
-Generate a certificate and private key for each Kubernetes worker node:
+각 쿠버네티스 작업자 노드에 대한 인증서 및 개인 키를 생성합니다.
 
 ```shell
 for instance in worker-0 worker-1 worker-2; do
@@ -151,7 +151,7 @@ cfssl gencert \
 done
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 worker-0-key.pem
@@ -162,9 +162,9 @@ worker-2-key.pem
 worker-2.pem
 ```
 
-### The Controller Manager Client Certificate
+### 컨트롤러 관리자 클라이언트 인증서
 
-Generate the `kube-controller-manager` client certificate and private key:
+`kube-controller-manager` 클라이언트 인증서 및 개인 키를 생성합니다.
 
 ```shell
 {
@@ -198,16 +198,16 @@ cfssl gencert \
 }
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 kube-controller-manager-key.pem
 kube-controller-manager.pem
 ```
 
-### The Kube Proxy Client Certificate
+### Kube Proxy 클라이언트 인증서
 
-Create the `kube-proxy` client certificate signing request:
+`kube-proxy` 클라이언트 인증서 서명 요청을 작성합니다.
 
 ```shell
 cat > kube-proxy-csr.json <<EOF
@@ -230,7 +230,7 @@ cat > kube-proxy-csr.json <<EOF
 EOF
 ```
 
-Generate the `kube-proxy` client certificate and private key:
+`kube-proxy` 클라이언트 인증서 및 개인 키를 생성합니다.
 
 ```shell
 cfssl gencert \
@@ -241,16 +241,16 @@ cfssl gencert \
   kube-proxy-csr.json | cfssljson -bare kube-proxy
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 kube-proxy-key.pem
 kube-proxy.pem
 ```
 
-### The Scheduler Client Certificate
+### 스케줄러 클라이언트 인증서
 
-Generate the `kube-scheduler` client certificate and private key:
+`kube-scheduler` 클라이언트 인증서 및 개인 키를 생성합니다.
 
 ```shell
 {
@@ -284,25 +284,25 @@ cfssl gencert \
 }
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 kube-scheduler-key.pem
 kube-scheduler.pem
 ```
 
-### The Kubernetes API Server Certificate
+### 쿠버네티스 API 서버 인증서
 
-The `kubernetes-the-hard-way` static IP address will be included in the list of subject alternative names for the Kubernetes API Server certificate. This will ensure the certificate can be validated by remote clients.
+`kubernetes-the-hard-way` 고정 IP 주소는 쿠버네티스 API 서버 인증서의 주체 대체 이름 목록에 포함됩니다. 이렇게하면 원격 클라이언트가 인증서를 확인할 수 있습니다.
 
-Retrieve the `kubernetes-the-hard-way` static IP address:
+`kubernetes-the-hard-way` 고정 IP 주소를 확인합니다.
 
 ```shell
 KUBERNETES_PUBLIC_ADDRESS=$(az network public-ip show -g kubernetes \
   -n kubernetes-pip --query "ipAddress" -otsv)
 ```
 
-Create the Kubernetes API Server certificate signing request:
+쿠버네티스 API 서버 인증서 서명 요청을 작성합니다.
 
 ```shell
 cat > kubernetes-csr.json <<EOF
@@ -315,7 +315,7 @@ cat > kubernetes-csr.json <<EOF
   "names": [
     {
       "C": "IT",
-      "L": "Milan",
+      "L": "Milam",
       "O": "Kubernetes",
       "OU": "Kubernetes The Hard Way",
       "ST": "Italy"
@@ -325,7 +325,7 @@ cat > kubernetes-csr.json <<EOF
 EOF
 ```
 
-Generate the Kubernetes API Server certificate and private key:
+쿠버네티스 API 서버 인증서 및 개인 키를 생성하십시오.
 
 ```shell
 cfssl gencert \
@@ -337,18 +337,18 @@ cfssl gencert \
   kubernetes-csr.json | cfssljson -bare kubernetes
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 kubernetes-key.pem
 kubernetes.pem
 ```
 
-## The Service Account Key Pair
+## 서비스 계정 키 페어
 
-The Kubernetes Controller Manager leverages a key pair to generate and sign service account tokens as describe in the [managing service accounts](https://kubernetes.io/docs/admin/service-accounts-admin/) documentation.
+쿠버네티스 컨트롤러 매니저는 서비스 계정 [관리](https://kubernetes.io/docs/admin/service-accounts-admin/) 문서에 설명 된대로 키 페어를 사용하여 서비스 계정 토큰을 생성하고 서명합니다.
 
-Generate the `service-account` certificate and private key:
+`service-account` 인증서 및 개인 키를 만듭니다.
 
 ```shell
 {
@@ -382,17 +382,18 @@ cfssl gencert \
 }
 ```
 
-Results:
+다음과 같이 파일이 만들어져야 합니다.
 
 ```shell
 service-account-key.pem
 service-account.pem
 ```
 
-## Distribute the Client and Server Certificates
-## If you're following the previous steps the username used to create the linux VM would be kuberoot 
+## 클라이언트 및 서버 인증서 배포
 
-Copy the appropriate certificates and private keys to each worker instance:
+## 이전 단계를 따르는 경우 리눅스 VM을 만드는 데 사용 된 사용자 이름은 kuberoot입니다.
+
+적절한 인증서와 개인 키를 각 작업자 인스턴스에 복사합니다.
 
 ```shell
 for instance in worker-0 worker-1 worker-2; do
@@ -403,7 +404,7 @@ for instance in worker-0 worker-1 worker-2; do
 done
 ```
 
-Copy the appropriate certificates and private keys to each controller instance:
+적절한 인증서와 개인 키를 각 컨트롤러 인스턴스에 복사합니다.
 
 ```shell
 for instance in controller-0 controller-1 controller-2; do
@@ -415,6 +416,6 @@ for instance in controller-0 controller-1 controller-2; do
 done
 ```
 
-> The `kube-proxy`, `kube-controller-manager`, `kube-scheduler`, and `kubelet` client certificates will be used to generate client authentication configuration files in the next lab.
+> `kube-proxy`, `kube-controller-manager`, `kube-scheduler` 및 `kubelet` 클라이언트 인증서는 다음 실습에서 클라이언트 인증 구성 파일을 생성하는 데 사용됩니다.
 
-Next: [Generating Kubernetes Configuration Files for Authentication](05-kubernetes-configuration-files.md)
+다음: [인증을 위한 쿠버네티스 구성 파일 생성](05-kubernetes-configuration-files.md)

@@ -1,10 +1,10 @@
-# Bootstrapping the Kubernetes Control Plane
+# 쿠버네티스 컨트롤 플레인 부트스트랩
 
-In this lab you will bootstrap the Kubernetes control plane across three compute instances and configure it for high availability. You will also create an external load balancer that exposes the Kubernetes API Servers to remote clients. The following components will be installed on each node: Kubernetes API Server, Scheduler, and Controller Manager.
+이 실습에서는 3개의 컴퓨팅 인스턴스에서 쿠버네티스 컨트롤 플레인을 부트스트랩하고 고 가용성을 위해 구성합니다. 또한 쿠버네티스 API 서버를 원격 클라이언트에 노출시키는 외부 로드 밸런서를 생성합니다. 쿠버네티스 API 서버, 스케줄러 및 컨트롤러 관리자와 같은 구성 요소가 각 노드에 설치됩니다.
 
-## Prerequisites
+## 전제 조건
 
-The commands in this lab must be run on each controller instance: `controller-0`, `controller-1`, and `controller-2`. Login to each controller instance using the `az` command to find its public IP and ssh to it. Example:
+각 컨트롤러 인스턴스 (`controller-0`, `controller-1` 및 `controller-2`)에 로그인해서 이 실습에 포함된 내용을 실행해야합니다. 각 인스턴스에 로그인하기 위해서는 `az` 명령을 사용하여 각 컨트롤러 인스턴스의 퍼블릭 IP를 찾아야 하며, 아래와 같이 실행하여 찾을 수 있습니다.
 
 ```shell
 CONTROLLER="controller-0"
@@ -14,21 +14,21 @@ PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
 ssh kuberoot@${PUBLIC_IP_ADDRESS}
 ```
 
-### Running commands in parallel with tmux
+### tmux로 동시에 여러 명령 실행하기
 
-[tmux](https://github.com/tmux/tmux/wiki) can be used to run commands on multiple compute instances at the same time. See the [Running commands in parallel with tmux](01-prerequisites.md#running-commands-in-parallel-with-tmux) section in the Prerequisites lab.
+[tmux](https://github.com/tmux/tmux/wiki)를 사용하여 여러 컴퓨팅 인스턴스에서 동시에 명령을 실행할 수 있습니다. 앞 단계의 [tmux로 동시에 여러 명령 실행하기](01-prerequisites.md#running-commands-in-parallel-with-tmux) 섹션에서 자세한 내용을 확인할 수 있습니다.
 
-## Provision the Kubernetes Control Plane
+## 쿠버네티스 컨트롤 플레인 프로비저닝
 
-Create the Kubernetes configuration directory:
+쿠버네티스 바이너리 파일들을 설치할 디렉터리를 만듭니다.
 
 ```shell
 sudo mkdir -p /etc/kubernetes/config
 ```
 
-### Download and Install the Kubernetes Controller Binaries
+### 쿠버네티스 컨트롤러 바이너리 다운로드 및 설치
 
-Download the official Kubernetes release binaries:
+공식 쿠버네티스 릴리스 바이너리를 다운로드합니다.
 
 ```shell
 wget -q --show-progress --https-only --timestamping \
@@ -38,7 +38,7 @@ wget -q --show-progress --https-only --timestamping \
   "https://storage.googleapis.com/kubernetes-release/release/v1.15.0/bin/linux/amd64/kubectl"
 ```
 
-Install the Kubernetes binaries:
+쿠버네티스 바이너리를 설치합니다.
 
 ```shell
 {
@@ -47,7 +47,7 @@ Install the Kubernetes binaries:
 }
 ```
 
-### Configure the Kubernetes API Server
+### 쿠버네티스 API 서버 구성
 
 ```shell
 {
@@ -59,13 +59,13 @@ Install the Kubernetes binaries:
 }
 ```
 
-The instance internal IP address will be used advertise the API Server to members of the cluster. Retrieve the internal IP address for the current compute instance:
+인스턴스 내부 IP 주소가 사용되어 API 서버를 클러스터 구성원에게 알립니다. 지금 작업 중인 컴퓨팅 인스턴스의 내부 IP 주소를 확인하여 변수로 저장합니다.
 
 ```shell
 INTERNAL_IP=$(ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 ```
 
-Create the `kube-apiserver.service` systemd unit file:
+`kube-apiserver.service` 시스템 유닛 파일을 만듭니다.
 
 ```shell
 cat <<EOF | sudo tee /etc/systemd/system/kube-apiserver.service
@@ -112,15 +112,15 @@ WantedBy=multi-user.target
 EOF
 ```
 
-### Configure the Kubernetes Controller Manager
+### 쿠버네티스 컨트롤러 매니저 구성
 
-Move the `kube-controller-manager` kubeconfig into place:
+`kube-controller-manager` kubeconfig 파일을 다음 위치로 옮깁니다.
 
 ```shell
 sudo mv kube-controller-manager.kubeconfig /var/lib/kubernetes/
 ```
 
-Create the `kube-controller-manager.service` systemd unit file:
+`kube-controller-manager.service` 시스템 유닛 파일을 만듭니다.
 
 ```shell
 cat <<EOF | sudo tee /etc/systemd/system/kube-controller-manager.service
@@ -150,15 +150,15 @@ WantedBy=multi-user.target
 EOF
 ```
 
-### Configure the Kubernetes Scheduler
+### 쿠버네티스 스케줄러 구성
 
-Move the `kube-scheduler` kubeconfig into place:
+`kube-scheduler` kubeconfig 파일을 다음 위치로 옮깁니다.
 
 ```shell
 sudo mv kube-scheduler.kubeconfig /var/lib/kubernetes/
 ```
 
-Create the `kube-scheduler.yaml` configuration file:
+`kube-scheduler.yaml` 구성 파일을 만듭니다.
 
 ```shell
 cat <<EOF | sudo tee /etc/kubernetes/config/kube-scheduler.yaml
@@ -171,7 +171,7 @@ leaderElection:
 EOF
 ```
 
-Create the `kube-scheduler.service` systemd unit file:
+`kube-scheduler.service` 시스템 유닛 파일을 만듭니다.
 
 ```shell
 cat <<EOF | sudo tee /etc/systemd/system/kube-scheduler.service
@@ -191,7 +191,7 @@ WantedBy=multi-user.target
 EOF
 ```
 
-### Start the Controller Services
+### 컨트롤러 서비스 시작
 
 ```shell
 {
@@ -201,9 +201,9 @@ EOF
 }
 ```
 
-> Allow up to 10 seconds for the Kubernetes API Server to fully initialize.
+> 쿠버네티스 API 서버가 완전히 초기화 될 때까지 최대 10초 정도 소요됩니다.
 
-### Verification
+### 확인
 
 ```shell
 kubectl get componentstatuses
@@ -218,13 +218,13 @@ etcd-1               Healthy   {"health": "true"}
 etcd-2               Healthy   {"health": "true"}
 ```
 
-> Remember to run the above commands on each controller node: `controller-0`, `controller-1`, and `controller-2`.
+> 각 컨트롤러 노드 (`controller-0`, `controller-1` 및 `controller-2`) 에서 명령을 실행하는 것을 놓치지 마세요.
 
-## RBAC for Kubelet Authorization
+## Kubelet 인증을 위한 RBAC
 
-In this section you will configure RBAC permissions to allow the Kubernetes API Server to access the Kubelet API on each worker node. Access to the Kubelet API is required for retrieving metrics, logs, and executing commands in pods.
+이 섹션에서는 쿠버네티스 API 서버가 각 작업자 노드의 Kubelet API에 액세스 할 수 있도록 RBAC 권한을 구성합니다. 파드에서 메트릭, 로그 및 명령을 검색하려면 Kubelet API에 액세스해야합니다.
 
-> This tutorial sets the Kubelet `--authorization-mode` flag to `Webhook`. Webhook mode uses the [SubjectAccessReview](https://kubernetes.io/docs/admin/authorization/#checking-api-access) API to determine authorization.
+> 이 튜토리얼은 Kubelet `--authorization-mode` 플래그를 `Webhook`으로 설정합니다. 웹 후크 모드는 [SubjectAccessReview](https://kubernetes.io/docs/admin/authorization/#checking-api-access) API를 사용하여 권한을 결정합니다.
 
 ```shell
 CONTROLLER="controller-0"
@@ -234,7 +234,7 @@ PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
 ssh kuberoot@${PUBLIC_IP_ADDRESS}
 ```
 
-Create the `system:kube-apiserver-to-kubelet` [ClusterRole](https://kubernetes.io/docs/admin/authorization/rbac/#role-and-clusterrole) with permissions to access the Kubelet API and perform most common tasks associated with managing pods:
+Kubelet API에 액세스 할 수있는 권한으로 `system:kube-apiserver-to-kubelet` [ClusterRole](https://kubernetes.io/docs/admin/authorization/rbac/#role-and-clusterrole)을 만들고 파드 관리와 관련된 가장 일반적인 작업을 수행합니다.
 
 ```shell
 cat <<EOF | kubectl apply -f -
@@ -260,9 +260,9 @@ rules:
 EOF
 ```
 
-The Kubernetes API Server authenticates to the Kubelet as the `kubernetes` user using the client certificate as defined by the `--kubelet-client-certificate` flag.
+쿠버네티스 API 서버는 Kubelet에 `kubernetes` 사용자로서 `--kubelet-client-certificate` 플래그로 정의된 클라이언트 인증서를 사용하여 인증합니다.
 
-Bind the `system:kube-apiserver-to-kubelet` ClusterRole to the `kubernetes` user:
+`system:kube-apiserver-to-kubelet` ClusterRole을 `kubernetes` 사용자에게 바인딩합니다:
 
 ```shell
 cat <<EOF | kubectl apply -f -
@@ -282,13 +282,14 @@ subjects:
 EOF
 ```
 
-## The Kubernetes Frontend Load Balancer
+## 쿠버네티스 프론트 엔드 로드 밸런서
 
-In this section you will provision an external load balancer to front the Kubernetes API Servers. The `kubernetes-the-hard-way` static IP address will be attached to the resulting load balancer.
+이 섹션에서는 쿠버네티스 API 서버를 위해 외부 로드 밸런서를 프로비저닝합니다. `kubernetes-the-hard-way` 고정 IP 주소는 새로 만들어지는 로드 밸런서와 연결합니다.
 
-> The compute instances created in this tutorial will not have permission to complete this section. Run the following commands from the same machine used to create the compute instances.
+> 이 자습서를 진행하면서 새로 만든 컴퓨팅 인스턴스에서는 이 섹션을 완료하기 위해 필요한 권한이 없습니다. 컴퓨팅 인스턴스를 작성하는 데 사용된 여러분의 컴퓨터에서 계속 진행해야 합니다.
 
-Create the load balancer health probe as a pre-requesite for the lb rule that follows.
+로드 밸런서를 만들기 위하여 필요한 로드 밸런서 상태 검사기를 만듭니다.
+
 ```shell
 az network lb probe create -g kubernetes \
   --lb-name kubernetes-lb \
@@ -297,7 +298,7 @@ az network lb probe create -g kubernetes \
   --protocol tcp
 ```
 
-Create the external load balancer network resources:
+외부 로드 밸런서 네트워크 리소스를 만듭니다.
 
 ```shell
 az network lb rule create -g kubernetes \
@@ -311,22 +312,22 @@ az network lb rule create -g kubernetes \
   --probe-name kubernetes-apiserver-probe
 ```
 
-### Verification
+### 확인
 
-Retrieve the `kubernetes-the-hard-way` static IP address:
+`kubernetes-the-hard-way` 고정 IP 주소를 확인합니다.
 
 ```shell
 KUBERNETES_PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
   -n kubernetes-pip --query ipAddress -otsv)
 ```
 
-Make a HTTP request for the Kubernetes version info:
+Kubernetes 버전 정보를 확인하는 HTTP 요청을 보냅니다.
 
 ```shell
 curl --cacert ca.pem https://$KUBERNETES_PUBLIC_IP_ADDRESS:6443/version
 ```
 
-> output
+> 출력
 
 ```shell
 {
@@ -342,4 +343,4 @@ curl --cacert ca.pem https://$KUBERNETES_PUBLIC_IP_ADDRESS:6443/version
 }
 ```
 
-Next: [Bootstrapping the Kubernetes Worker Nodes](09-bootstrapping-kubernetes-workers.md)
+다음: [쿠버네티스 워커 노드 부트스트랩](09-bootstrapping-kubernetes-workers.md)

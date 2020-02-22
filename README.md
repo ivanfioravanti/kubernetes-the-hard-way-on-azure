@@ -1,7 +1,7 @@
-# Kubernetes The Hard Way on Azure (Mini)
+# Kubernetes The Hard Way on Azure
 
 This tutorial is designed for [Microsoft Azure](https://azure.microsoft.com) and [Azure CLI 2.0](https://github.com/azure/azure-cli).
-It is a fork of the great [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way) from [Kelsey Hightower](https://twitter.com/kelseyhightower) that describes same steps using [Google Cloud Platform](https://cloud.google.com).
+It is a fork of the great [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way) from [Kesley Hightower](https://twitter.com/kelseyhightower) that describes same steps using [Google Cloud Platform](https://cloud.google.com).
 
 Azure part is based on the superb translation done by [Jonathan Carter - @lostintangent](https://twitter.com/LostInTangent) in this [fork](https://github.com/lostintangent/kubernetes-the-hard-way). He is the one who is really behind the Azure "translation".
 

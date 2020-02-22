@@ -1,10 +1,10 @@
-# Bootstrapping the etcd Cluster
+# etcd 클러스터 부트스트랩
 
-Kubernetes components are stateless and store cluster state in [etcd](https://github.com/etcd-io/etcd). In this lab you will bootstrap a three node etcd cluster and configure it for high availability and secure remote access.
+Kubernetes 구성 요소는 상태 독립적이며 클러스터 상태를 [etcd](https://github.com/etcd-io/etcd)에 저장합니다. 이 실습에서는 3개의 작업자 노드로 구성된 클러스터를 부트스트랩하고 고 가용성 및 안전한 원격 액세스를 위해 구성합니다.
 
-## Prerequisites
+## 전제 조건
 
-The commands in this lab must be run on each controller instance: `controller-0`, `controller-1`, and `controller-2`. Login to each controller instance using the `az` command to find its public IP and ssh to it. Example:
+각 컨트롤러 인스턴스 (`controller-0`, `controller-1` 및 `controller-2`)에 로그인해서 이 실습에 포함된 내용을 실행해야합니다. 각 인스턴스에 로그인하기 위해서는 `az` 명령을 사용하여 각 컨트롤러 인스턴스의 퍼블릭 IP를 찾아야 하며, 아래와 같이 실행하여 찾을 수 있습니다.
 
 ```shell
 CONTROLLER="controller-0"
@@ -14,18 +14,18 @@ PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
 ssh kuberoot@${PUBLIC_IP_ADDRESS}
 ```
 
-## Bootstrapping an etcd Cluster Member
+## etcd 클러스터 멤버 부트스트랩
 
-### Download and Install the etcd Binaries
+### etcd 바이너리 다운로드 및 설치
 
-Download the official etcd release binaries from the [etcd-io/etcd](https://github.com/etcd-io/etcd) GitHub project:
+[etcd-io/etcd](https://github.com/etcd-io/etcd) GitHub 프로젝트에서 공식 etcd 릴리스 바이너리를 다운로드하십시오.
 
 ```shell
 wget -q --show-progress --https-only --timestamping \
   "https://github.com/etcd-io/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz"
 ```
 
-Extract and install the `etcd` server and the `etcdctl` command line utility:
+`etcd` 서버와 `etcdctl` CLI 유틸리티를 추출하여 설치하십시오.
 
 ```shell
 {
@@ -34,7 +34,7 @@ Extract and install the `etcd` server and the `etcdctl` command line utility:
 }
 ```
 
-### Configure the etcd Server
+### etcd 서버 구성
 
 ```shell
 {
@@ -43,19 +43,19 @@ Extract and install the `etcd` server and the `etcdctl` command line utility:
 }
 ```
 
-The instance internal IP address will be used to serve client requests and communicate with etcd cluster peers. Retrieve the internal IP address for the current compute instance:
+인스턴스 내부 IP 주소는 클라이언트 요청을 처리하고 etcd 클러스터 피어와 통신하는 데 사용됩니다. 현재 인스턴스의 내부 IP 주소를 확인합니다.
 
 ```shell
 INTERNAL_IP=$(ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 ```
 
-Each etcd member must have a unique name within an etcd cluster. Set the etcd name to match the hostname of the current compute instance:
+각 etcd 멤버는 etcd 클러스터 내에서 고유한 이름을 가져야합니다. etcd 이름을 현재 계산 인스턴스의 호스트 이름과 일치하도록 설정합니다.
 
 ```shell
 ETCD_NAME=$(hostname -s)
 ```
 
-Create the `etcd.service` systemd unit file:
+`etcd.service` 시스템 유닛 파일을 작성합니다.
 
 ```shell
 cat > etcd.service <<EOF
@@ -90,7 +90,7 @@ WantedBy=multi-user.target
 EOF
 ```
 
-### Start the etcd Server
+### etcd 서버 시작하기
 
 ```shell
 sudo mv etcd.service /etc/systemd/system/
@@ -104,11 +104,11 @@ sudo mv etcd.service /etc/systemd/system/
 }
 ```
 
-> Remember to run the above commands on each controller node: `controller-0`, `controller-1`, and `controller-2`.
+> 각 컨트롤러 노드에서 `controller-0`, `controller-1` 및 `controller-2` 명령을 실행해야 한다는 것을 놓치지 마세요.
 
-## Verification
+## 확인
 
-List the etcd cluster members:
+etcd 클러스터 멤버를 확인합니다.
 
 ```shell
 sudo ETCDCTL_API=3 etcdctl member list \
@@ -118,7 +118,7 @@ sudo ETCDCTL_API=3 etcdctl member list \
   --key=/etc/etcd/kubernetes-key.pem
 ```
 
-> output
+> 출력
 
 ```shell
 3a57933972cb5131, started, controller-2, https://10.240.0.12:2380, https://10.240.0.12:2379
@@ -126,4 +126,4 @@ f98dc20bce6225a0, started, controller-0, https://10.240.0.10:2380, https://10.24
 ffed16798470cab5, started, controller-1, https://10.240.0.11:2380, https://10.240.0.11:2379
 ```
 
-Next: [Bootstrapping the Kubernetes Control Plane](08-bootstrapping-kubernetes-controllers.md)
+다음: [쿠버네티스 컨트롤 플레인 부트스트랩](08-bootstrapping-kubernetes-controllers.md)

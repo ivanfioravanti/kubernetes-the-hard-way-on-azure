@@ -1,25 +1,25 @@
-# Bootstrapping the Kubernetes Worker Nodes
+# 쿠버네티스 워커 노드 부트스트랩
 
-In this lab you will bootstrap three Kubernetes worker nodes. The following components will be installed on each node: [runc](https://github.com/opencontainers/runc), [container networking plugins](https://github.com/containernetworking/cni), [cri-containerd](https://github.com/containerd/cri), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), and [kube-proxy](https://kubernetes.io/docs/concepts/cluster-administration/proxies/).
+이 실습에서는 3개의 쿠버네티스 워커 노드를 부트스트랩합니다. [runc](https://github.com/opencontainers/runc), [컨테이너 네트워킹 플러그인](https://github.com/containernetworking/cni), [cri-containerd](https://github.com/kubernetes-incubator/cri-containerd), [kubelet](https://kubernetes.io/docs/admin/kubelet) 및 [kube-proxy](https://kubernetes.io/docs/concepts/cluster-administration/proxies) 구성 요소가 각 노드에 설치됩니다.
 
-## Prerequisites
+## 전제 조건
 
-The commands in this lab must be run on each worker instance: `worker-0`, `worker-1`, and `worker-2`.
-Azure Instance Metadata Service cannot be used to set custom property. We have used *tags* on each worker VM to defined POD-CIDR used later.
+각 워커 인스턴스 (`worker-0`, `worker-1` 및 `worker-2`)에 로그인해서 이 실습에 포함된 내용을 실행해야합니다.
+Azure 메타데이터 인스턴스 서비스는 사용자 지정 속성을 설정하는데 사용할 수 없으므로, 대신 각 워커 VM에서 *태그* 를 사용하여 나중에 사용되는 POD-CIDR을 정의했습니다.
 
-Retrieve the POD CIDR range for the current compute instance and keep it for later.
+새로 만든 컴퓨팅 인스턴스의 POD CIDR 범위를 확인하고, 다른 곳에 메모해둡니다.
 
 ```shell
 az vm show -g kubernetes --name worker-0 --query "tags" -o tsv
 ```
 
-> output
+> 출력
 
 ```shell
 10.200.0.0/24
 ```
 
-Login to each worker instance using the `az` command to find its public IP and ssh to it. Example:
+각 워커 인스턴스에 로그인하기 위해서는 {code3}az{/code3} 명령을 사용하여 각 컨트롤러 인스턴스의 퍼블릭 IP를 찾아야 하며, 아래와 같이 실행하여 찾을 수 있습니다. 예:
 
 ```shell
 WORKER="worker-0"
@@ -29,13 +29,13 @@ PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
 ssh kuberoot@${PUBLIC_IP_ADDRESS}
 ```
 
-### Running commands in parallel with tmux
+### tmux로 동시에 여러 명령 실행하기
 
-[tmux](https://github.com/tmux/tmux/wiki) can be used to run commands on multiple compute instances at the same time. See the [Running commands in parallel with tmux](01-prerequisites.md#running-commands-in-parallel-with-tmux) section in the Prerequisites lab.
+[tmux](https://github.com/tmux/tmux/wiki)를 사용하여 여러 컴퓨팅 인스턴스에서 동시에 명령을 실행할 수 있습니다. 앞 단계의 [tmux로 동시에 여러 명령 실행하기](01-prerequisites.md#running-commands-in-parallel-with-tmux) 섹션에서 자세한 내용을 확인할 수 있습니다.
 
-## Provisioning a Kubernetes Worker Node
+## 쿠버네티스 워커 노드 프로비저닝
 
-Install the OS dependencies:
+OS 종속성을 설치합니다.
 
 ```shell
 {
@@ -44,9 +44,9 @@ Install the OS dependencies:
 }
 ```
 
-> The socat binary enables support for the `kubectl port-forward` command.
+> socat 바이너리는 `kubectl port-forward` 명령을 지원합니다.
 
-### Download and Install Worker Binaries
+### 워커 바이너리 다운로드 및 설치
 
 ```shell
 wget -q --show-progress --https-only --timestamping \
@@ -60,7 +60,7 @@ wget -q --show-progress --https-only --timestamping \
   https://storage.googleapis.com/kubernetes-release/release/v1.15.0/bin/linux/amd64/kubelet
 ```
 
-Create the installation directories:
+설치 디렉토리를 만듭니다.
 
 ```shell
 sudo mkdir -p \
@@ -72,7 +72,7 @@ sudo mkdir -p \
   /var/run/kubernetes
 ```
 
-Install the worker binaries:
+워커 바이너리를 설치합니다.
 
 ```shell
 {
@@ -85,11 +85,9 @@ Install the worker binaries:
 }
 ```
 
-### Configure CNI Networking
+### CNI 네트워킹 구성
 
-Create the `bridge` network configuration file replacing POD_CIDR with address retrieved initially from Azure VM tags:
-
-> Note: the [Azure Instance Metadata Service](https://docs.microsoft.com/azure/virtual-machines/windows/instance-metadata-service) is used to retrieve the POD_CIDR tag for each worker.
+POD_CIDR을 Azure VM 태그에서 처음 검색된 주소로 바꾸는 `bridge` 네트워크 구성 파일을 만듭니다. (참고: Azure Metadata Instance Service는 각 작업자의 POD_CIDR 태그를 검색하는 데 사용됩니다. https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/virtual-machines/windows/instance-metadata-service.md)
 
 ```shell
 POD_CIDR="$(echo $(curl --silent -H Metadata:true "http://169.254.169.254/metadata/instance/compute/tags?api-version=2017-08-01&format=text") | cut -d : -f2)"
@@ -112,7 +110,7 @@ cat <<EOF | sudo tee /etc/cni/net.d/10-bridge.conf
 EOF
 ```
 
-Create the `loopback` network configuration file:
+`loopback` 네트워크 구성 파일을 만듭니다.
 
 ```shell
 cat <<EOF | sudo tee /etc/cni/net.d/99-loopback.conf
@@ -124,9 +122,9 @@ cat <<EOF | sudo tee /etc/cni/net.d/99-loopback.conf
 EOF
 ```
 
-### Configure containerd
+### containerd 구성
 
-Create the `containerd` configuration file:
+`containerd` 구성 파일을 만듭니다.
 
 ```shell
 sudo mkdir -p /etc/containerd/
@@ -152,9 +150,9 @@ cat << EOF | sudo tee /etc/containerd/config.toml
 EOF
 ```
 
-> Untrusted workloads will be run using the gVisor (runsc) runtime.
+> 신뢰할 수 없는 워크로드는 gVisor (runsc) 런타임을 사용하여 실행됩니다.
 
-Create the `containerd.service` systemd unit file:
+`containerd.service` 시스템 유닛 파일을 만듭니다.
 
 ```shell
 cat <<EOF | sudo tee /etc/systemd/system/containerd.service
@@ -183,7 +181,7 @@ WantedBy=multi-user.target
 EOF
 ```
 
-### Configure the Kubelet
+### Kubelet 구성
 
 ```shell
 {
@@ -193,7 +191,7 @@ EOF
 }
 ```
 
-Create the `kubelet-config.yaml` configuration file:
+`kubelet-config.yaml` 구성 파일을 만듭니다.
 
 ```shell
 cat <<EOF | sudo tee /var/lib/kubelet/kubelet-config.yaml
@@ -219,9 +217,9 @@ tlsPrivateKeyFile: "/var/lib/kubelet/${HOSTNAME}-key.pem"
 EOF
 ```
 
-> The `resolvConf` configuration is used to avoid loops when using CoreDNS for service discovery on systems running `systemd-resolved`.
+> `resolvConf` 구성은 `systemd-resolved` 실행하는 시스템에서 서비스 발견을 위해 CoreDNS를 사용할 때 루프를 피하기 위해 사용됩니다.
 
-Create the `kubelet.service` systemd unit file:
+`kubelet.service` 시스템 유닛 파일을 만듭니다.
 
 ```shell
 cat <<EOF | sudo tee /etc/systemd/system/kubelet.service
@@ -249,13 +247,13 @@ WantedBy=multi-user.target
 EOF
 ```
 
-### Configure the Kubernetes Proxy
+### 쿠버네티스 프록시 구성
 
 ```shell
 sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
 ```
 
-Create the `kube-proxy-config.yaml` configuration file:
+`kube-proxy-config.yaml` 구성 파일을 만듭니다.
 
 ```shell
 cat <<EOF | sudo tee /var/lib/kube-proxy/kube-proxy-config.yaml
@@ -268,7 +266,7 @@ clusterCIDR: "10.200.0.0/16"
 EOF
 ```
 
-Create the `kube-proxy.service` systemd unit file:
+`kube-proxy.service` 시스템 유닛 파일을 만듭니다.
 
 ```shell
 cat <<EOF | sudo tee /etc/systemd/system/kube-proxy.service
@@ -287,7 +285,7 @@ WantedBy=multi-user.target
 EOF
 ```
 
-### Start the Worker Services
+### 워커 서비스 시작
 
 ```shell
 {
@@ -297,11 +295,11 @@ EOF
 }
 ```
 
-> Remember to run the above commands on each worker node: `worker-0`, `worker-1`, and `worker-2`.
+> 각 워커 노드 (`worker-0`, `worker-1` 및 `worker-2`) 에서 위의 명령을 실행해야 합니다.
 
-## Verification
+## 확인
 
-Login to one of the controller nodes:
+컨트롤러 노드 중 하나에 로그인합니다.
 
 ```shell
 CONTROLLER="controller-0"
@@ -311,13 +309,13 @@ PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
 ssh kuberoot@${PUBLIC_IP_ADDRESS}
 ```
 
-List the registered Kubernetes nodes:
+등록된 쿠버네티스 노드를 확인합니다.
 
 ```shell
 kubectl get nodes
 ```
 
-> output
+> 출력
 
 ```shell
 NAME       STATUS    AGE       VERSION
@@ -326,4 +324,4 @@ worker-1   Ready    <none>   32s   v1.15.0
 worker-2   Ready    <none>   37s   v1.15.0
 ```
 
-Next: [Configuring kubectl for Remote Access](10-configuring-kubectl.md)
+다음: [원격 액세스를위한 kubectl 구성](10-configuring-kubectl.md)

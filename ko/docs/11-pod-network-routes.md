@@ -1,16 +1,16 @@
-# Provisioning Pod Network Routes
+# 파드 네트워크 경로 프로비저닝
 
-Pods scheduled to a node receive an IP address from the node's Pod CIDR range. At this point pods can not communicate with other pods running on different nodes due to missing network [routes](https://docs.microsoft.com/azure/virtual-network/virtual-networks-udr-overview#user-defined).
+노드에 예약된 파드는 노드의 파드 CIDR 범위에서 IP 주소를 할당받습니다. 이 시점에서 파드는 [라우팅 테이블 항목](https://docs.microsoft.com/en-us/azure/virtual-network/virtual-networks-udr-overview) 누락으로 인해 다른 노드에서 실행중인 다른 파드와 통신 할 수 없습니다.
 
-In this lab you will create a route for each worker node that maps the node's Pod CIDR range to the node's internal IP address.
+이 실습에서는 노드의 파드 CIDR 범위를 노드의 내부 IP 주소에 매핑하는 각 작업자 노드에 대한 경로를 만듭니다.
 
-> There are [other ways](https://kubernetes.io/docs/concepts/cluster-administration/networking/#how-to-implement-the-kubernetes-networking-model) to implement the Kubernetes networking model.
+> 쿠버네티스 네트워킹 모델을 구현하는 [방법들](https://kubernetes.io/docs/concepts/cluster-administration/networking/#how-to-achieve-this)은 여러 가지가 있습니다.
 
-## The Routing Table
+## 라우팅 테이블
 
-In this section you will gather the information required to create routes in the kubernetes-vnet.
+이 섹션에서는 kubernetes-vnet에서 경로를 만드는 데 필요한 정보를 수집합니다.
 
-Print the internal IP address and Pod CIDR range for each worker instance:
+각 워커 인스턴스의 내부 IP 주소 및 포드 CIDR 범위를 인쇄합니다.
 
 ```shell
 for instance in worker-0 worker-1 worker-2; do
@@ -20,7 +20,7 @@ for instance in worker-0 worker-1 worker-2; do
 done
 ```
 
-> output
+> 출력
 
 ```shell
 10.240.0.20 10.200.0.0/24
@@ -28,9 +28,9 @@ done
 10.240.0.22 10.200.2.0/24
 ```
 
-## Routes
+## 라우팅 테이블
 
-Create network routes for worker instance:
+워커 인스턴스간의 네트워크 경로를 만듭니다.
 
 ```shell
 az network route-table create -g kubernetes -n kubernetes-routes
@@ -54,13 +54,13 @@ az network route-table route create -g kubernetes \
 done
 ```
 
-List the routes in the `kubernetes-vnet`:
+`kubernetes-vnet` 라우팅 테이블을 확인합니다.
 
 ```shell
 az network route-table route list -g kubernetes --route-table-name kubernetes-routes -o table
 ```
 
-> output
+> 출력
 
 ```shell
 AddressPrefix    Name                            NextHopIpAddress    NextHopType       ProvisioningState    ResourceGroup
@@ -70,4 +70,4 @@ AddressPrefix    Name                            NextHopIpAddress    NextHopType
 10.200.2.0/24    kubernetes-route-10-200-2-0-24  10.240.0.22         VirtualAppliance  Succeeded            kubernetes
 ```
 
-Next: [Deploying the DNS Cluster Add-on](12-dns-addon.md)
+다음: [DNS 클러스터 애드온 배포](12-dns-addon.md)
