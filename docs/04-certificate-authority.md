@@ -139,7 +139,7 @@ cat > ${instance}-csr.json <<EOF
 EOF
 
 EXTERNAL_IP=$(az network public-ip show -g kubernetes \
-  -n kubernetes-pip --query ipAddress -o tsv)
+  -n ${instance} --query ipAddress -o tsv)
 
 INTERNAL_IP=$(az vm show -d -n ${instance} -g kubernetes --query privateIps -o tsv)
 
