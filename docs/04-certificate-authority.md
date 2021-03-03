@@ -353,7 +353,6 @@ The Kubernetes Controller Manager leverages a key pair to generate and sign serv
 Generate the `service-account` certificate and private key:
 
 ```shell
-{
 
 cat > service-account-csr.json <<EOF
 {
@@ -381,7 +380,6 @@ cfssl gencert \
   -profile=kubernetes \
   service-account-csr.json | cfssljson -bare service-account
 
-}
 ```
 
 Results:
